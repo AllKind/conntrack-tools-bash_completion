@@ -1,0 +1,199 @@
+#!/usr/bin/env bash
+
+# -----------------------------------------------------------------
+# Programmable completion specification for conntrack (netfilter)
+# http://www.netfilter.org/projects/conntrack/index.html
+#
+# Project home:
+# https://github.com/AllKind/conntrack-tools-bash_completion
+# http://sourceforge.net/p/conntrack-tools-bash-compl
+# -----------------------------------------------------------------
+
+# Copyright (C) 2016 Mart Frauenlob aka AllKind (AllKind@fastest.cc)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# -----------------------------------------------------------------
+# Requirements:
+#
+# The bash completion package version 2.0 or greater is recommended.
+# https://github.com/scop/bash-completion
+# If bash completion is present, and the version includes the
+# `_init_completion()' function, completion on variables and redirection
+# is available in addition. Otherwise only option completion is fully supported.
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# Installation (quote from bash-completion README):
+#
+# Install it in one of the directories pointed to by
+# bash-completion's pkgconfig file variables.  There are two
+# alternatives: the recommended one is 'completionsdir' (get it with
+# "pkg-config --variable=completionsdir bash-completion") from which
+# completions are loaded on demand based on invoked commands' names,
+# so be sure to name your completion file accordingly, and to include
+# for example symbolic links in case the file provides completions
+# for more than one command.  The other one which is present for
+# backwards compatibility reasons is 'compatdir' (get it with
+# "pkg-config --variable=compatdir bash-completion") from which files
+# are loaded when bash_completion is loaded.
+#
+# For packages using GNU autotools the installation can be handled
+# for example like this in configure.ac:
+#
+#  PKG_CHECK_VAR(bashcompdir, [bash-completion], [completionsdir], ,
+#    bashcompdir="${sysconfdir}/bash_completion.d")
+#  AC_SUBST(bashcompdir)
+#
+# ...accompanied by this in Makefile.am:
+#
+#  bashcompdir = @bashcompdir@
+#  dist_bashcomp_DATA = # completion files go here
+#
+# For cmake we ship the bash-completion-config.cmake and
+# bash-completion-config-version.cmake files. Example usage:
+#
+#  find_package(bash-completion)
+#  if(BASH_COMPLETION_FOUND)
+#    message(STATUS
+#      "Using bash completion dir ${BASH_COMPLETION_COMPLETIONSDIR}")
+#  else()
+#    set (BASH_COMPLETION_COMPLETIONSDIR "/etc/bash_completion.d")
+#    message (STATUS
+#      "Using fallback bash completion dir ${BASH_COMPLETION_COMPLETIONSDIR}")
+#  endif()
+#
+#  install(FILES your-completion-file DESTINATION
+#    ${BASH_COMPLETION_COMPLETIONSDIR})
+#
+# For backwards compatibility it is still possible to put it into
+# ~/.bash_completion or /etc/bash_completion.d/.
+# -----------------------------------------------------------------
+#
+# Version 1.0
+#
+# -----------------------------------------------------------------
+
+shopt -s extglob
+
+_conntrack_complete() {
+local cur prev cword words
+local -i i
+
+# main command
+local str_act="" str_table=""
+
+# main commands
+local -a arr_cmd_short=( -L -G -D -I -U -E -F -C -S )
+local -a arr_cmd_long=( --dump --get --delete --create --update --event --flush --count --stats )
+local -a arr_common_opts=(
+--orig-src--orig-dst
+--reply-src --reply-dst
+--proto
+#--family # -L, --dump only
+--timeout
+--status
+--zone
+--orig-zone --reply-zone
+#--buffer-size # -E, --event only
+#--mask-src --mask-dst # For conntrack this option is only available in conjunction with
+# "-L, --dump", "-E, --event", "-U --update" or "-D --delete".
+# For expectations this option is only available in conjunction with "-I, --create".
+)
+local -a arr_conntrack_opts=(
+--src-nat --dst-nat --any-nat
+--mark --secmark
+#--event-mask # -E, --event only
+#--zero # -L, --dump only
+#--output # -L, --dump, -G, --get only
+#--label # -L, --dump, -E, --event, -U, --update, -D, --delete only
+)
+local -a arr_expect_opts=( --tuple-src --tuple-dst )
+local -a arr_update_opts=( --label-add --label-del )
+local -a arr_opts_w_arg=( --family --event-mask --output --label --label-add --label-del )
+COMPREPLY=()
+
+# if _init_completion() from bash_completion is available, use it to deal with
+# variables and redirections. otherwise use _get_comp_words_by_ref().
+# as fallback we commpose our own variables.
+if declare -f _init_completion &>/dev/null; then
+	_init_completion || return # ret val -gt 0 = nothing more to do
+elif declare -f _get_comp_words_by_ref &>/dev/null; then
+    _get_comp_words_by_ref cur prev cword words || return
+else # not so neat, but a workaround - will fail w/ spaces in obj names
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    cword=$COMP_CWORD
+    for i in ${!COMP_WORDS[@]}; do words[i]="${COMP_WORDS[i]}"; done
+fi
+
+# gather information about the command line
+if [[ ${words[1]} = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]}" "${arr_cmd_long[*]}") ) ]]
+then
+	str_act="${words[1]}" # this is the main command
+fi
+if [[ ${words[2]} = @(conntrack|expect) ]]; then
+	str_table="${words[2]}" # this is the table
+fi
+
+# here we go
+if ((cword == 1)); then # main command
+	COMPREPLY=( $( compgen -W '${arr_cmd_long[@]}' -- "$cur" ) )
+elif ((cword == 2)) && [[ $prev = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]/-S/}" "${arr_cmd_long[*]/--stats/}") ) ]]
+then # table names - but not with -S, --stats
+	COMPREPLY=( $( compgen -W 'conntrack expect dying unconfirmed' -- "$cur" ) )
+elif ((cword >= 3)); then
+	if [[ $str_act = @(-F|-C|-S|--flush|--count|--stats) ]]; then
+		return 0 # no options available on this command
+	fi
+	if [[ $cur = -* ]]; then
+		if [[ $prev = @($(IFS='|';printf "%s|%s|%s|%s|%s\n" "${arr_opts_w_arg[@]}" "${arr_common_opts[*]}" "${arr_conntrack_opts[@]}" "${arr_expect_opts[@]}" "${arr_update_opts[@]}") ) ]]
+		then
+			return 0 # options expecting an argument
+		fi
+		COMPREPLY=( $( compgen -W '${arr_common_opts[@]}' -- "$cur" ) )
+		if [[ $str_table = conntrack ]]; then
+			COMPREPLY+=( $( compgen -W '${arr_conntrack_opts[@]}' -- "$cur" ) )
+			if [[ $str_act = @(-L|--dump|-E|--event|-U|--update|-D|--delete) ]]; then
+				COMPREPLY+=( $( compgen -W '--mask-src --mask-dst' -- "$cur" ) )
+			fi
+		elif [[ $str_table = expect ]]; then
+			COMPREPLY+=( $( compgen -W '${arr_expect_opts[@]}' -- "$cur" ) )
+			if [[ $str_act = @(-I|--create) ]]; then
+				COMPREPLY+=( $( compgen -W '--mask-src --mask-dst' -- "$cur" ) )
+			fi
+		fi
+		if [[ $str_act = @(-U|--update) ]]; then
+			COMPREPLY+=( $( compgen -W \
+				'${arr_update_opts[@]} --label --label-add --label-del' -- "$cur" ) )
+		elif [[ $str_act = @(-E|--event) ]]; then
+			COMPREPLY+=( $( compgen -W '--event-mask --buffer-size --label' -- "$cur" ) )
+		elif [[ $str_act = @(-L|--dump) ]]; then
+			COMPREPLY+=( $( compgen -W '--family --label --output --zero' -- "$cur" ) )
+		elif [[ $str_act = @(-I|--create) ]]; then
+			COMPREPLY+=( $( compgen -W '--label-add' -- "$cur" ) )
+		elif [[ $str_act = @(-G|--get) ]]; then
+			COMPREPLY+=( $( compgen -W '--family --label --output --zero' -- "$cur" ) )
+		fi
+	elif [[ $cur = * ]]; then
+		if [[ $prev = @(-f|--family) ]]; then
+			COMPREPLY=( $( compgen -W 'ipv4 ipv6' -- "$cur" ) )
+		fi
+	fi
+fi
+}
+
+complete -F _conntrack_complete conntrack
+
+
