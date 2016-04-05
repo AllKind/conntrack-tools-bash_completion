@@ -7,9 +7,9 @@ http://www.netfilter.org/projects/conntrack/index.html
 
 Project home:
 
-https://github.com/AllKind/conntrack-bash_completion
+http://sourceforge.net/p/conntrack-tools-bash-compl
 
-https://sourceforge.net/projects/conntrack-bashcompletion
+https://github.com/AllKind/conntrack-tools-bash_completion
 
 
 Requirements
