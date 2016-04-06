@@ -88,17 +88,19 @@
 shopt -s extglob
 
 _conntrack_complete() {
+# at least bash 4 is required
+((${BASH_VERSINFO[0]} < 4)) && return 0
 local cur prev cword words
 local -i i
 
 # main command
-local str_act="" str_table=""
+local str_act="" str_table="" str_proto=""
 
 # main commands
 local -a arr_cmd_short=( -L -G -D -I -U -E -F -C -S )
 local -a arr_cmd_long=( --dump --get --delete --create --update --event --flush --count --stats )
 local -a arr_common_opts=(
---orig-src--orig-dst
+--orig-src --orig-dst
 --reply-src --reply-dst
 --proto
 #--family # -L, --dump only
@@ -121,7 +123,27 @@ local -a arr_conntrack_opts=(
 )
 local -a arr_expect_opts=( --tuple-src --tuple-dst )
 local -a arr_update_opts=( --label-add --label-del )
+
+# options that require an argument
 local -a arr_opts_w_arg=( --family --event-mask --output --label --label-add --label-del )
+# protocol depending options
+local -a arr_proto_many_opts=(
+--sport --orig-port-src --dport --orig-port-dst
+--reply-port-src --reply-port-dst
+)
+local -a arr_proto_sctp_opts=( --orig-vtag --reply-vtag )
+local -a arr_proto_icmp_opts=( --icmp-type --icmp-code --icmp-id )
+local -a arr_proto_gre_opts=(
+--srckey --orig-key-src --dstkey --orig-key-dst --reply-key-src --reply-key-dst
+)
+# all protocol options joined
+local -a arr_proto_opts=(
+"${arr_proto_many_opts[@]}" --state
+"${arr_proto_icmp_opts[@]}"
+"${arr_proto_gre_opts[@]}"
+"${arr_proto_sctp_opts[@]}"
+)
+
 COMPREPLY=()
 
 # if _init_completion() from bash_completion is available, use it to deal with
@@ -131,7 +153,7 @@ if declare -f _init_completion &>/dev/null; then
 	_init_completion || return # ret val -gt 0 = nothing more to do
 elif declare -f _get_comp_words_by_ref &>/dev/null; then
     _get_comp_words_by_ref cur prev cword words || return
-else # not so neat, but a workaround - will fail w/ spaces in obj names
+else # not so neat, but a workaround
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     cword=$COMP_CWORD
@@ -139,56 +161,74 @@ else # not so neat, but a workaround - will fail w/ spaces in obj names
 fi
 
 # gather information about the command line
-if [[ ${words[1]} = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]}" "${arr_cmd_long[*]}") ) ]]
+if [[ ${words[1]} = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]}" "${arr_cmd_long[*]}")) ]]
 then
 	str_act="${words[1]}" # this is the main command
 fi
 if [[ ${words[2]} = @(conntrack|expect|dying|unconfirmed) ]]; then
 	str_table="${words[2]}" # this is the table
 fi
+for ((i=3; i < ${#words[@]}-1; i++)); do
+	if [[ ${words[i]} = @(-p|--proto|--protonum) ]]; then
+		str_proto="${words[i+1],,}"
+	fi
+done
 
 # here we go
 if ((cword == 1)); then # main command
-	COMPREPLY=( $( compgen -W '${arr_cmd_long[@]}' -- "$cur" ) )
-elif ((cword == 2)) && [[ $prev = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]/-S/}" "${arr_cmd_long[*]/--stats/}") ) ]]
+	COMPREPLY=( $(compgen -W '${arr_cmd_long[@]}' -- "$cur") )
+elif ((cword == 2)) && [[ $prev = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]/-S/}" "${arr_cmd_long[*]/--stats/}")) ]]
 then # table names - but not with -S, --stats
-	COMPREPLY=( $( compgen -W 'conntrack expect dying unconfirmed' -- "$cur" ) )
+	COMPREPLY=( $(compgen -W 'conntrack expect dying unconfirmed' -- "$cur") )
 elif ((cword >= 3)); then
 	if [[ $str_act = @(-F|-C|-S|--flush|--count|--stats) ]]; then
 		return 0 # no options available on this command
 	fi
 	if [[ $cur = -* ]]; then
-		if [[ $prev = @($(IFS='|';printf "%s|%s|%s|%s|%s\n" "${arr_opts_w_arg[@]}" "${arr_common_opts[*]}" "${arr_conntrack_opts[@]}" "${arr_expect_opts[@]}" "${arr_update_opts[@]}") ) ]]
+		if [[ $prev = @($(IFS='|';printf "%s|%s|%s|%s|%s|%s\n" "${arr_opts_w_arg[*]}" "${arr_common_opts[*]}" "${arr_conntrack_opts[*]}" "${arr_expect_opts[*]}" "${arr_update_opts[*]}" "${arr_proto_opts[*]}")) ]]
 		then
 			return 0 # options expecting an argument
 		fi
-		COMPREPLY=( $( compgen -W '${arr_common_opts[@]}' -- "$cur" ) )
+		COMPREPLY=( $(compgen -W '${arr_common_opts[@]}' -- "$cur") )
 		if [[ $str_table = conntrack ]]; then
-			COMPREPLY+=( $( compgen -W '${arr_conntrack_opts[@]}' -- "$cur" ) )
+			COMPREPLY+=( $(compgen -W '${arr_conntrack_opts[@]}' -- "$cur") )
 			if [[ $str_act = @(-L|--dump|-E|--event|-U|--update|-D|--delete) ]]; then
-				COMPREPLY+=( $( compgen -W '--mask-src --mask-dst' -- "$cur" ) )
+				COMPREPLY+=( $(compgen -W '--mask-src --mask-dst' -- "$cur") )
 			fi
 		elif [[ $str_table = expect ]]; then
-			COMPREPLY+=( $( compgen -W '${arr_expect_opts[@]}' -- "$cur" ) )
+			COMPREPLY+=( $(compgen -W '${arr_expect_opts[@]}' -- "$cur") )
 			if [[ $str_act = @(-I|--create) ]]; then
-				COMPREPLY+=( $( compgen -W '--mask-src --mask-dst' -- "$cur" ) )
+				COMPREPLY+=( $(compgen -W '--mask-src --mask-dst' -- "$cur") )
 			fi
 		fi
 		if [[ $str_act = @(-U|--update) ]]; then
-			COMPREPLY+=( $( compgen -W \
-				'${arr_update_opts[@]} --label --label-add --label-del' -- "$cur" ) )
+			COMPREPLY+=( $(compgen -W \
+				'${arr_update_opts[@]} --label --label-add --label-del' -- "$cur") )
 		elif [[ $str_act = @(-E|--event) ]]; then
-			COMPREPLY+=( $( compgen -W '--event-mask --buffer-size --label' -- "$cur" ) )
+			COMPREPLY+=( $(compgen -W '--event-mask --buffer-size --label' -- "$cur") )
 		elif [[ $str_act = @(-L|--dump) ]]; then
-			COMPREPLY+=( $( compgen -W '--family --label --output --zero' -- "$cur" ) )
+			COMPREPLY+=( $(compgen -W '--family --label --output --zero' -- "$cur") )
 		elif [[ $str_act = @(-I|--create) ]]; then
-			COMPREPLY+=( $( compgen -W '--label-add' -- "$cur" ) )
+			COMPREPLY+=( $(compgen -W '--label-add' -- "$cur") )
 		elif [[ $str_act = @(-G|--get) ]]; then
-			COMPREPLY+=( $( compgen -W '--family --label --output --zero' -- "$cur" ) )
+			COMPREPLY+=( $(compgen -W '--family --label --output --zero' -- "$cur") )
+		fi
+		# protocol depending options
+		if [[ $str_proto = @(dccp|tcp|udp|udplite|sctp) ]]; then
+			COMPREPLY+=( $(compgen -W '${arr_proto_many_opts[@]}' -- "$cur") )
+			if [[ $str_proto = @(dccp|tcp) ]]; then
+				COMPREPLY+=( $(compgen -W '--state' -- "$cur") )
+			elif [[ $str_proto = sctp ]]; then
+				COMPREPLY+=( $(compgen -W '--state ${arr_proto_sctp_opts[@]}' -- "$cur") )
+			fi
+		elif [[ $str_proto = icmp ]]; then
+			COMPREPLY+=( $(compgen -W '${arr_proto_icmp_opts[@]}' -- "$cur") )
+		elif [[ $str_proto = gre ]]; then
+			COMPREPLY+=( $(compgen -W '${arr_proto_gre_opts[@]}' -- "$cur") )
 		fi
 	elif [[ $cur = * ]]; then
 		if [[ $prev = @(-f|--family) ]]; then
-			COMPREPLY=( $( compgen -W 'ipv4 ipv6' -- "$cur" ) )
+			COMPREPLY=( $(compgen -W 'ipv4 ipv6' -- "$cur") )
 		fi
 	fi
 fi
