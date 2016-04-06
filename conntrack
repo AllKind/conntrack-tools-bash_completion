@@ -87,6 +87,45 @@
 
 shopt -s extglob
 
+_ct_build_comma_list() {
+# build comma separated list - entries are unique
+local -i i x
+local lcur="$1" lmatch="" rlist="" prefix=""
+shift
+local arr_list=("${@}")
+local str_pat=$(IFS=\|; printf "%s" "${arr_list[*]}")
+compopt -o nospace
+if [[ $lcur ]]; then
+    if [[ ${lcur} = @($str_pat) ]]; then # word found
+        prefix="${lcur}," rlist="$lcur" lmatch=""
+    elif [[ ${lcur:$((${#lcur}-1))} = , ]]; then # last char is a comma
+        prefix="${lcur}" rlist="$lcur" lmatch=""
+    elif [[ ${lcur:$((${#lcur}-1))} != , ]]; then # last char is not a comma
+        if [[ ${lcur##*,} != @($str_pat) ]]; then # incomplete word
+            prefix="${lcur%${lcur##*,}}"
+            rlist="${lcur%${lcur##*,}}"
+            if [[ $lcur = *,* ]]; then # already a list present
+                lmatch="${lcur##*,}"
+            else
+                lmatch="${lcur}"
+            fi
+            [[ $prefix && ${prefix:$((${#prefix}-1))} != , ]] && prefix="${prefix},"
+        else
+            prefix="${lcur}," rlist="$lcur" lmatch=""
+        fi
+    fi
+    for x in ${rlist//,/ }; do
+        for i in ${!arr_list[@]}; do
+            if [[ $x = ${arr_list[i]} ]]; then
+                unset arr_list[i]
+            fi
+        done
+    done
+fi
+((${#arr_list[@]} == 1)) && compopt +o nospace
+COMPREPLY=( $( compgen -P "$prefix" -W '${arr_list[@]}' -- "$lmatch" ) )
+}
+
 _conntrack_complete() {
 # at least bash 4 is required
 ((${BASH_VERSINFO[0]} < 4)) && return 0
@@ -257,6 +296,12 @@ elif ((cword >= 3)); then
 			COMPREPLY=( $(compgen -W \
 				'NONE REQUEST RESPOND PARTOPEN OPEN CLOSEREQ CLOSING TIMEWAIT' \
 				-- "$cur") )
+		elif [[ $prev = @(-o|--output) && $str_act = @(-L|--dump|-G|--get) ]]; then
+			_ct_build_comma_list "$cur" extended xml timestamp id ktimestamp labels
+		elif [[ $prev = @(-e|--event-mask) && $str_act = @(-E|--event) ]]; then
+			_ct_build_comma_list "$cur" ALL NEW UPDATES DESTROY
+		elif [[ $prev = @(-u|--status) ]]; then
+			_ct_build_comma_list "$cur" ASSURED SEEN_REPLY FIXED_TIMEOUT EXPECTED UNSET
 		elif [[ $prev = @(-p|--proto|--protonum) ]]; then # retrieve protocol names
 			[[ -r /etc/protocols ]] || return 0
 			local str_name rest
