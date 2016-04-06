@@ -188,12 +188,12 @@ fi
 
 # here we go
 if ((cword == 1)); then # main command
-	COMPREPLY=( $(compgen -W '${arr_cmd_long[@]}' -- "$cur") )
+	COMPREPLY=( $(compgen -W '${arr_cmd_long[@]} --version' -- "$cur") )
 elif ((cword == 2)) && [[ $prev = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]/-S/}" "${arr_cmd_long[*]/--stats/}")) ]]
 then # table names - but not with -S, --stats
 	COMPREPLY=( $(compgen -W 'conntrack expect dying unconfirmed' -- "$cur") )
 elif ((cword >= 3)); then
-	if [[ $str_act = @(-F|-C|-S|--flush|--count|--stats) ]]; then
+	if [[ $str_act = @(-F|-C|-S|--flush|--count|--stats|--version) ]]; then
 		return 0 # no options available on this command
 	fi
 	# option request
