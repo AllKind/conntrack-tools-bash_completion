@@ -320,7 +320,7 @@ elif ((cword >= 3)); then
 				COMPREPLY+=( "${str_name%%#*}" )
 			done < /etc/protocols
 			COMPREPLY=( $(compgen -W '${COMPREPLY[@]}' -- "$cur") )
-		elif [[ $prev = @($(IFS='|';printf "%s|%s\n" "${arr_proto_svc_opts[*]}")) ]]
+		elif [[ $prev = @($(IFS='|';printf "%s\n" "${arr_proto_svc_opts[*]}")) ]]
 		then # retrieve service names
 			[[ -r /etc/services ]] || return 0
 			while read -r str_name rest; do
