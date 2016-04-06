@@ -233,6 +233,16 @@ elif ((cword >= 3)); then
 	elif [[ $cur = * ]]; then
 		if [[ $prev = @(-f|--family) ]]; then
 			COMPREPLY=( $(compgen -W 'ipv4 ipv6' -- "$cur") )
+		elif [[ $prev = @(-p|--proto|--protonum) ]]; then # retrieve protocol names
+			[[ -r /etc/protocols ]] || return 0
+			local str_name rest
+			while read -r str_name rest; do
+				if [[ $str_name = @(""|*([[:blank:]])#*) ]]; then
+					continue
+				fi
+				COMPREPLY+=( "${str_name%%#*}" )
+			done < /etc/protocols
+			COMPREPLY=( $(compgen -W '${COMPREPLY[@]}' -- "$cur") )
 		fi
 	fi
 fi
