@@ -245,6 +245,18 @@ elif ((cword >= 3)); then
 	elif [[ $cur = * ]]; then
 		if [[ $prev = @(-f|--family) ]]; then
 			COMPREPLY=( $(compgen -W 'ipv4 ipv6' -- "$cur") )
+		elif [[ $prev = --state && $str_proto = tcp ]]; then # tcp state
+			COMPREPLY=( $(compgen -W \
+				'NONE SYN_SENT SYN_RECV ESTABLISHED FIN_WAIT CLOSE_WAIT LAST_ACK TIME_WAIT CLOSE LISTEN' \
+				-- "$cur") )
+		elif [[ $prev = --state && $str_proto = sctp ]]; then # sctp state
+			COMPREPLY=( $(compgen -W \
+				'NONE CLOSED COOKIE_WAIT COOKIE_ECHOED ESTABLISHED SHUTDOWN_SENT SHUTDOWN_RECD SHUTDOWN_ACK_SENT' \
+				-- "$cur") )
+		elif [[ $prev = --state && $str_proto = dccp ]]; then # dccp state
+			COMPREPLY=( $(compgen -W \
+				'NONE REQUEST RESPOND PARTOPEN OPEN CLOSEREQ CLOSING TIMEWAIT'
+				-- "$cur") )
 		elif [[ $prev = @(-p|--proto|--protonum) ]]; then # retrieve protocol names
 			[[ -r /etc/protocols ]] || return 0
 			local str_name rest
