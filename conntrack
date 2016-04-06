@@ -184,12 +184,14 @@ elif ((cword >= 3)); then
 	if [[ $str_act = @(-F|-C|-S|--flush|--count|--stats) ]]; then
 		return 0 # no options available on this command
 	fi
+	# option request
 	if [[ $cur = -* ]]; then
 		if [[ $prev = @($(IFS='|';printf "%s|%s|%s|%s|%s|%s\n" "${arr_opts_w_arg[*]}" "${arr_common_opts[*]}" "${arr_conntrack_opts[*]}" "${arr_expect_opts[*]}" "${arr_update_opts[*]}" "${arr_proto_opts[*]}")) ]]
 		then
 			return 0 # options expecting an argument
 		fi
 		COMPREPLY=( $(compgen -W '${arr_common_opts[@]}' -- "$cur") )
+		# table depending options
 		if [[ $str_table = conntrack ]]; then
 			COMPREPLY+=( $(compgen -W '${arr_conntrack_opts[@]}' -- "$cur") )
 			if [[ $str_act = @(-L|--dump|-E|--event|-U|--update|-D|--delete) ]]; then
@@ -201,6 +203,7 @@ elif ((cword >= 3)); then
 				COMPREPLY+=( $(compgen -W '--mask-src --mask-dst' -- "$cur") )
 			fi
 		fi
+		# command depending options
 		if [[ $str_act = @(-U|--update) ]]; then
 			COMPREPLY+=( $(compgen -W \
 				'${arr_update_opts[@]} --label --label-add --label-del' -- "$cur") )
@@ -226,6 +229,7 @@ elif ((cword >= 3)); then
 		elif [[ $str_proto = gre ]]; then
 			COMPREPLY+=( $(compgen -W '${arr_proto_gre_opts[@]}' -- "$cur") )
 		fi
+	# non option request
 	elif [[ $cur = * ]]; then
 		if [[ $prev = @(-f|--family) ]]; then
 			COMPREPLY=( $(compgen -W 'ipv4 ipv6' -- "$cur") )
