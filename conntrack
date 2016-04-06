@@ -261,11 +261,17 @@ elif ((cword >= 3)); then
 			[[ -r /etc/protocols ]] || return 0
 			local str_name rest
 			while read -r str_name rest; do
-				if [[ $str_name = @(""|*([[:blank:]])#*) ]]; then
-					continue
-				fi
+				[[ $str_name = @(""|*([[:blank:]])#*) ]] && continue
 				COMPREPLY+=( "${str_name%%#*}" )
 			done < /etc/protocols
+			COMPREPLY=( $(compgen -W '${COMPREPLY[@]}' -- "$cur") )
+		elif [[ $prev = @($(IFS='|';printf "%s|%s\n" "${arr_proto_many_opts[*]}")) ]]
+		then # retrieve service names
+			[[ -r /etc/services ]] || return 0
+			while read -r str_name rest; do
+				[[ $str_name = @(""|*([[:blank:]])#*) ]] && continue
+				COMPREPLY+=( "${str_name%%#*}" )
+			done < /etc/services
 			COMPREPLY=( $(compgen -W '${COMPREPLY[@]}' -- "$cur") )
 		fi
 	fi
