@@ -255,7 +255,7 @@ elif ((cword >= 3)); then
 				-- "$cur") )
 		elif [[ $prev = --state && $str_proto = dccp ]]; then # dccp state
 			COMPREPLY=( $(compgen -W \
-				'NONE REQUEST RESPOND PARTOPEN OPEN CLOSEREQ CLOSING TIMEWAIT'
+				'NONE REQUEST RESPOND PARTOPEN OPEN CLOSEREQ CLOSING TIMEWAIT' \
 				-- "$cur") )
 		elif [[ $prev = @(-p|--proto|--protonum) ]]; then # retrieve protocol names
 			[[ -r /etc/protocols ]] || return 0
