@@ -25,7 +25,10 @@ Features conntrack
 If the bash completion package is present, and the version includes the
 **_init_completion()** function, completion on variables and redirection
 is available in addition. Otherwise only option completion is fully supported.
+
 Protocol and service names are retrieved from /etc/{protocols,services} and offered for completion.
+
+Numeric protocol names are recognized and their options will be made available.
 
 
 Installation
