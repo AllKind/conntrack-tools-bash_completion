@@ -22,7 +22,7 @@ https://github.com/scop/bash-completion
 Features conntrack
 ==========
 
-If bash completion is present, and the version includes the
+If the bash completion package is present, and the version includes the
 **_init_completion()** function, completion on variables and redirection
 is available in addition. Otherwise only option completion is fully supported.
 Protocol and service names are retrieved from /etc/{protocols,services} and offered for completion.
