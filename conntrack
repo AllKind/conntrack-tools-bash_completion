@@ -143,7 +143,7 @@ if [[ ${words[1]} = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]}" "${arr_cm
 then
 	str_act="${words[1]}" # this is the main command
 fi
-if [[ ${words[2]} = @(conntrack|expect) ]]; then
+if [[ ${words[2]} = @(conntrack|expect|dying|unconfirmed) ]]; then
 	str_table="${words[2]}" # this is the table
 fi
 
