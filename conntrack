@@ -231,7 +231,7 @@ if [[ $str_proto = +([[:digit:]]) ]]; then
 	elif ((str_proto == 17)); then str_proto=udp
 	elif ((str_proto == 33)); then str_proto=dccp
 	elif ((str_proto == 47)); then str_proto=gre
-#	elif ((str_proto == 58)); then str_proto=ipv6-icmp
+#	elif ((str_proto == 58)); then str_proto=ipv6-icmp # not implemented I guess
 	elif ((str_proto == 132)); then str_proto=sctp
 	elif ((str_proto == 136)); then str_proto=udplite
 	fi
@@ -331,6 +331,9 @@ elif ((cword >= 2)); then
 				COMPREPLY+=( "${str_name%%#*}" )
 			done < /etc/services
 			COMPREPLY=( $(compgen -W '${COMPREPLY[@]}' -- "$cur") )
+		else
+			compopt -o nospace
+			COMPREPLY=( -- )
 		fi
 	fi
 fi
