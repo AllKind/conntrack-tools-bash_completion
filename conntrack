@@ -132,12 +132,13 @@ _conntrack_complete() {
 local cur prev cword words
 local -i i
 
-# main command
+# main command / table / protocol
 local str_act="" str_table="" str_proto=""
 
-# main commands
+# main commands -short --long forms
 local -a arr_cmd_short=( -L -G -D -I -U -E -F -C -S )
 local -a arr_cmd_long=( --dump --get --delete --create --update --event --flush --count --stats )
+# options
 local -a arr_common_opts=(
 --orig-src --orig-dst
 --reply-src --reply-dst
@@ -243,7 +244,11 @@ if ((cword == 1)); then # main command
 elif ((cword == 2)) && [[ $cur != -* ]] && \
 	[[ $prev = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]/-S/}" "${arr_cmd_long[*]/--stats/}")) ]]
 then # table names - but not with -S, --stats
-	COMPREPLY=( $(compgen -W 'conntrack expect dying unconfirmed' -- "$cur") )
+	if [[ $prev != @(-L|--dump|-G|--get) ]]; then
+		COMPREPLY=( $(compgen -W 'conntrack expect' -- "$cur") )
+	else
+		COMPREPLY=( $(compgen -W 'conntrack expect dying unconfirmed' -- "$cur") )
+	fi
 elif ((cword >= 2)); then
 	if [[ $str_act = @(-F|-C|-S|--flush|--count|--stats|--version) ]]; then
 		return 0 # no options available on this command
@@ -256,7 +261,11 @@ elif ((cword >= 2)); then
 		fi
 		COMPREPLY=( $(compgen -W '${arr_common_opts[@]}' -- "$cur") )
 		# table depending options
-		if [[ $str_table = conntrack ]]; then
+		if [[ $str_table = @(dying|unconfirmed) ]]; then
+			if [[ $str_act != @(-L|--dump|-G|--get) ]]; then
+				return 0 # only listing and retrieving is valid for these tables
+			fi
+		elif [[ $str_table = conntrack ]]; then
 			COMPREPLY+=( $(compgen -W '${arr_conntrack_opts[@]}' -- "$cur") )
 			if [[ $str_act = @(-L|--dump|-E|--event|-U|--update|-D|--delete) ]]; then
 				COMPREPLY+=( $(compgen -W '--mask-src --mask-dst' -- "$cur") )
@@ -341,5 +350,4 @@ fi
 }
 
 complete -F _conntrack_complete conntrack
-
 
