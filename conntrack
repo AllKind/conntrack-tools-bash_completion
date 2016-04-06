@@ -164,7 +164,15 @@ local -a arr_expect_opts=( --tuple-src --tuple-dst )
 local -a arr_update_opts=( --label-add --label-del )
 
 # options that require an argument
-local -a arr_opts_w_arg=( --family --event-mask --output --label --label-add --label-del )
+local -a arr_opts_w_arg=(
+-b --buffer-size
+-f --family
+-e --event-mask
+-o --output
+-l --label
+# short forms that need to be covered if user uses them manually on cmd-line
+-p -s -d -r -q -m -u
+)
 # protocol depending options
 local -a arr_proto_svc_opts=(
 --sport --orig-port-src --dport --orig-port-dst
@@ -237,7 +245,7 @@ elif ((cword >= 3)); then
 	fi
 	# option request
 	if [[ $cur = -* ]]; then
-		if [[ $prev = @($(IFS='|';printf "%s|%s|%s|%s|%s|%s\n" "${arr_opts_w_arg[*]}" "${arr_common_opts[*]}" "${arr_conntrack_opts[*]}" "${arr_expect_opts[*]}" "${arr_update_opts[*]}" "${arr_proto_opts[*]}")) ]]
+		if [[ $prev = @($(IFS='|';printf "%s|%s|%s|%s|%s|%s\n" "${arr_opts_w_arg[*]}" "${arr_common_opts[*]//--*zone/}" "${arr_conntrack_opts[*]}" "${arr_expect_opts[*]}" "${arr_update_opts[*]}" "${arr_proto_opts[*]}")) ]]
 		then
 			return 0 # options expecting an argument
 		fi
