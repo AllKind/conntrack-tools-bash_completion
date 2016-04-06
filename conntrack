@@ -217,20 +217,22 @@ if [[ ${words[2]} = @(conntrack|expect|dying|unconfirmed) ]]; then
 fi
 for ((i=3; i < ${#words[@]}-1; i++)); do
 	if [[ ${words[i]} = @(-p|--proto|--protonum) ]]; then
+		# this is the protocol
 		str_proto="${words[i+1],,}"
 	fi
 done
 
 # translate numeric protocol definitions to names
 if [[ $str_proto = +([[:digit:]]) ]]; then
-	((str_proto == 1)) && str_proto=icmp
-	((str_proto == 6)) && str_proto=tcp
-	((str_proto == 17)) && str_proto=udp
-	((str_proto == 33)) && str_proto=dccp
-	((str_proto == 47)) && str_proto=gre
-#	((str_proto == 58)) && str_proto=ipv6-icmp
-	((str_proto == 132)) && str_proto=sctp
-	((str_proto == 136)) && str_proto=udplite
+	if ((str_proto == 1)); then str_proto=icmp
+	elif ((str_proto == 6)); then str_proto=tcp
+	elif ((str_proto == 17)); then str_proto=udp
+	elif ((str_proto == 33)); then str_proto=dccp
+	elif ((str_proto == 47)); then str_proto=gre
+#	elif ((str_proto == 58)); then str_proto=ipv6-icmp
+	elif ((str_proto == 132)); then str_proto=sctp
+	elif ((str_proto == 136)); then str_proto=udplite
+	fi
 fi
 
 # here we go
