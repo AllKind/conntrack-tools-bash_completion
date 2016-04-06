@@ -89,7 +89,7 @@ shopt -s extglob
 
 _ct_build_comma_list() {
 # build comma separated list - entries are unique
-local -i i x
+local i x
 local lcur="$1" lmatch="" rlist="" prefix=""
 shift
 local arr_list=("${@}")
@@ -332,6 +332,7 @@ elif ((cword >= 2)); then
 			done < /etc/services
 			COMPREPLY=( $(compgen -W '${COMPREPLY[@]}' -- "$cur") )
 		else
+			# default to double dash, if nothing else matched
 			compopt -o nospace
 			COMPREPLY=( -- )
 		fi
