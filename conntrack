@@ -214,6 +214,8 @@ then
 fi
 if [[ ${words[2]} = @(conntrack|expect|dying|unconfirmed) ]]; then
 	str_table="${words[2]}" # this is the table
+elif [[ ${words[2]} = -* ]]; then
+	str_table="conntrack" # default table if undefined
 fi
 for ((i=3; i < ${#words[@]}-1; i++)); do
 	if [[ ${words[i]} = @(-p|--proto|--protonum) ]]; then
