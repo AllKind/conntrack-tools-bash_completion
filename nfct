@@ -108,7 +108,7 @@ else # not so neat, but a workaround
 fi
 
 if ((cword == 1)); then # main command
-	COMPREPLY=($(compgen -W 'list add delete get' -- "$cur"))
+	COMPREPLY=($(compgen -W 'list add delete get disable default-get default-set' -- "$cur"))
 elif ((cword == 2)); then
 	COMPREPLY=($(compgen -W 'timeout helper help version' -- "$cur"))
 fi
