@@ -114,6 +114,7 @@ if [[ $lcur ]]; then
             prefix="${lcur}," rlist="$lcur" lmatch=""
         fi
     fi
+	# remove dupes
     for x in ${rlist//,/ }; do
         for i in ${!arr_list[@]}; do
             if [[ $x = ${arr_list[i]} ]]; then
@@ -209,7 +210,7 @@ else # not so neat, but a workaround
 fi
 
 # gather information about the command line
-if [[ ${words[1]} = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]}" "${arr_cmd_long[*]}")) ]]
+if [[ ${words[1]} = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]}" "${arr_cmd_long[*]}")|-h|--help|--version) ]]
 then
 	str_act="${words[1]}" # this is the main command
 fi
@@ -240,13 +241,13 @@ fi
 
 # here we go
 if ((cword == 1)); then # main command
-	COMPREPLY=( $(compgen -W '${arr_cmd_long[@]} --version' -- "$cur") )
+	COMPREPLY=( $(compgen -W '${arr_cmd_long[@]} --help --version' -- "$cur") )
 elif ((cword == 2)) && [[ $cur != -* ]] && \
 	[[ $prev = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]/-S/}" "${arr_cmd_long[*]/--stats/}")) ]]
 then # table names - but not with -S, --stats
 	COMPREPLY=( $(compgen -W 'conntrack expect dying unconfirmed' -- "$cur") )
 elif ((cword >= 2)); then
-	if [[ $str_act = @(-F|-C|-S|--flush|--count|--stats|--version) ]]; then
+	if [[ $str_act = @(-F|-C|-S|-h|--flush|--count|--stats|--help|--version) ]]; then
 		return 0 # no options available on this command
 	fi
 	# option request
