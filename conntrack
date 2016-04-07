@@ -136,6 +136,8 @@ local -i i
 # main command / table / protocol
 local str_act="" str_table="" str_proto=""
 
+local -a arr_dupe_opts=() # remember dupe/alias options
+
 # main commands -short --long forms
 local -a arr_cmd_short=( -L -G -D -I -U -E -F -C -S )
 local -a arr_cmd_long=( --dump --get --delete --create --update --event --flush --count --stats )
@@ -211,8 +213,7 @@ fi
 
 # gather information about the command line
 if [[ ${words[1]} = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]}" "${arr_cmd_long[*]}")|-h|--help|--version) ]]
-then
-	str_act="${words[1]}" # this is the main command
+then str_act="${words[1]}" # this is the main command
 fi
 if [[ ${words[2]} = @(conntrack|expect|dying|unconfirmed) ]]; then
 	str_table="${words[2]}" # this is the table
@@ -221,8 +222,15 @@ elif [[ ${words[2]} = -* ]]; then
 fi
 for ((i=3; i < ${#words[@]}-1; i++)); do
 	if [[ ${words[i]} = @(-p|--proto|--protonum) ]]; then
-		# this is the protocol
-		str_proto="${words[i+1],,}"
+		str_proto="${words[i+1],,}" # this is the protocol
+	elif [[ ${words[i]} = --dport ]]; then
+		arr_dupe_opts+=( --orig-port-dst ) # alias to be removed
+	elif [[ ${words[i]} = --sport ]]; then
+		arr_dupe_opts+=( --orig-port-src ) # alias to be removed
+	elif [[ ${words[i]} = --orig-port-dst ]]; then
+		arr_dupe_opts+=( --dport ) # alias to be removed
+	elif [[ ${words[i]} = --orig-port-src]]; then
+		arr_dupe_opts+=( --sport ) # alias to be removed
 	fi
 done
 
@@ -260,8 +268,7 @@ elif ((cword >= 2)); then
 	# option request
 	if [[ $cur = -* ]]; then
 		if [[ $prev = @($(IFS='|';printf "%s|%s|%s|%s|%s|%s\n" "${arr_opts_w_arg[*]}" "${arr_common_opts[*]//--*zone/}" "${arr_conntrack_opts[*]}" "${arr_expect_opts[*]}" "${arr_update_opts[*]}" "${arr_proto_opts[*]}")) ]]
-		then
-			return 0 # options expecting an argument
+		then return 0 # options expecting an argument
 		fi
 		COMPREPLY=( $(compgen -W '${arr_common_opts[@]}' -- "$cur") )
 		# table depending options
@@ -348,6 +355,16 @@ elif ((cword >= 2)); then
 			COMPREPLY=( -- )
 		fi
 	fi
+fi
+
+# de-dupe options
+if ((${#COMPREPLY[@]})); then
+	for i in ${!arr_dupe_opts[@]}; do
+		for x in ${!COMPREPLY[@]}; do
+			[[ ${COMPREPLY[x]} = -* ]] || continue
+			[[ ${COMPREPLY[x]} = ${arr_dupe_opts[i]} ]] && unset COMPREPLY[x]
+		done
+	done
 fi
 }
 
