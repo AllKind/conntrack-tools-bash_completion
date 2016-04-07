@@ -237,6 +237,14 @@ for ((i=2; i < ${#words[@]}-1; i++)); do
 		arr_dupe_opts+=( --dport ) # alias to be removed
 	elif [[ ${words[i]} = --orig-port-src ]]; then
 		arr_dupe_opts+=( --sport ) # alias to be removed
+	elif [[ ${words[i]} = --any-nat ]]; then
+		arr_dupe_opts+=( --src-nat --dst-nat ) # mutual exclusive
+	elif [[ ${words[i]} = @(--src-nat|--dst-nat) ]]; then
+		arr_dupe_opts+=( --any-nat ) # mutual exclusive
+	elif [[ ${words[i]} = --label-del ]]; then
+		arr_dupe_opts+=( --labe-add ) # mutual exclusive
+	elif [[ ${words[i]} = --label-add ]]; then
+		arr_dupe_opts+=( --labe-del ) # mutual exclusive
 	fi
 done
 
