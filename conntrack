@@ -245,10 +245,17 @@ if ((cword == 1)); then # main command
 elif ((cword == 2)) && [[ $cur != -* ]] && \
 	[[ $prev = @($(IFS='|';printf "%s|%s\n" "${arr_cmd_short[*]/-S/}" "${arr_cmd_long[*]/--stats/}")) ]]
 then # table names - but not with -S, --stats
-	COMPREPLY=( $(compgen -W 'conntrack expect dying unconfirmed' -- "$cur") )
+	if [[ $prev = @(-L|--dump|-G|--get) ]]; then
+		COMPREPLY=( $(compgen -W 'conntrack expect dying unconfirmed' -- "$cur") )
+	else # dying + unconfirmed table only allow listing and retrieval
+		COMPREPLY=( $(compgen -W 'conntrack expect' -- "$cur") )
+	fi
 elif ((cword >= 2)); then
 	if [[ $str_act = @(-F|-C|-S|-h|--flush|--count|--stats|--help|--version) ]]; then
 		return 0 # no options available on this command
+	fi
+	if [[ $str_act != @(-L|--dump|-G|--get) && $str_table = @(dying|unconfirmed) ]]; then
+		return 0 # no options available on this command/table combination
 	fi
 	# option request
 	if [[ $cur = -* ]]; then
@@ -258,7 +265,11 @@ elif ((cword >= 2)); then
 		fi
 		COMPREPLY=( $(compgen -W '${arr_common_opts[@]}' -- "$cur") )
 		# table depending options
-		if [[ $str_table = conntrack ]]; then
+		if [[ $str_table = @(dying|unconfirmed) ]]; then
+			if [[ $str_act != @(-L|--dump|-G|--get) ]]; then
+				return 0 # only listing and retrieving is valid for these tables
+			fi
+		elif [[ $str_table = conntrack ]]; then
 			COMPREPLY+=( $(compgen -W '${arr_conntrack_opts[@]}' -- "$cur") )
 			if [[ $str_act = @(-L|--dump|-E|--event|-U|--update|-D|--delete) ]]; then
 				COMPREPLY+=( $(compgen -W '--mask-src --mask-dst' -- "$cur") )
