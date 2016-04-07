@@ -220,7 +220,7 @@ if [[ ${words[2]} = @(conntrack|expect|dying|unconfirmed) ]]; then
 elif [[ ${words[2]} = -* ]]; then
 	str_table="conntrack" # default table if undefined
 fi
-for ((i=3; i < ${#words[@]}-1; i++)); do
+for ((i=2; i < ${#words[@]}-1; i++)); do
 	if [[ ${words[i]} = @(-p|--proto|--protonum) ]]; then
 		str_proto="${words[i+1],,}" # this is the protocol
 	elif [[ ${words[i]} = --dport ]]; then
