@@ -15,6 +15,7 @@ https://github.com/AllKind/conntrack-tools-bash_completion
 Requirements
 ==========
 
+bash version 4 or greater.
 The bash completion package version 2.0 or greater is recommended.
 https://github.com/scop/bash-completion
 
