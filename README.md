@@ -1,7 +1,8 @@
 conntrack-tools-bash_completion
 ==========
 
-Programmable completion specification for conntrack-tools (netfilter)
+Programmable completion specification for conntrack-tools (netfilter).
+This package includes completions for conntrack, conntrackd and nfct.
 
 http://www.netfilter.org/projects/conntrack/index.html
 
@@ -20,24 +21,26 @@ The bash completion package version 2.0 or greater is recommended.
 https://github.com/scop/bash-completion
 
 
-Features conntrack
+Features all
 ==========
 
 If the bash completion package is present, and the version includes the
 **_init_completion()** function, completion on variables and redirection
 is available in addition. Otherwise only option completion is fully supported.
+
+
+Features conntrack
+==========
 
 Protocol and service names are retrieved from /etc/{protocols,services} and offered for completion.
 
 Numeric protocol names are recognized and their options will be made available.
 
 
-Features conntrackd
+Features nfct
 ==========
 
-If the bash completion package is present, and the version includes the
-**_init_completion()** function, completion on variables and redirection
-is available in addition. Otherwise only option completion is fully supported.
+Support for nfct is very limited. By now only the command and the subsystem names get completed.
 
 
 Installation
