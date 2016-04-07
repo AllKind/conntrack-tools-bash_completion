@@ -284,13 +284,11 @@ elif ((cword >= 2)); then
 		if [[ $str_act = @(-U|--update) ]]; then
 			COMPREPLY+=( $(compgen -W \
 				'${arr_update_opts[@]} --label --label-add --label-del' -- "$cur") )
-		elif [[ $str_act = @(-E|--event) ]]; then
-			COMPREPLY+=( $(compgen -W '--event-mask --buffer-size --label' -- "$cur") )
-		elif [[ $str_act = @(-L|--dump) ]]; then
-			COMPREPLY+=( $(compgen -W '--family --label --output --zero' -- "$cur") )
 		elif [[ $str_act = @(-I|--create) ]]; then
 			COMPREPLY+=( $(compgen -W '--label-add' -- "$cur") )
-		elif [[ $str_act = @(-G|--get) ]]; then
+		elif [[ $str_act = @(-E|--event) ]]; then
+			COMPREPLY+=( $(compgen -W '--event-mask --buffer-size --label' -- "$cur") )
+		elif [[ $str_act = @(-L|--dump|-G|--get) ]]; then
 			COMPREPLY+=( $(compgen -W '--family --label --output --zero' -- "$cur") )
 		fi
 		# protocol depending options
