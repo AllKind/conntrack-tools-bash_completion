@@ -92,7 +92,7 @@ _ct_build_comma_list() {
 local i x
 local lcur="$1" lmatch="" rlist="" prefix=""
 shift
-local arr_list=("${@}")
+local -a arr_list=( "${@}" )
 local str_pat=$(IFS=\|; printf "%s" "${arr_list[*]}")
 compopt -o nospace
 if [[ $lcur ]]; then
@@ -143,7 +143,7 @@ local -a arr_cmd_short=( -L -G -D -I -U -E -F -C -S )
 local -a arr_cmd_long=( --dump --get --delete --create --update --event --flush --count --stats )
 # options
 local -a arr_common_opts=(
---orig-src --orig-dst
+--src --dst --orig-src --orig-dst
 --reply-src --reply-dst
 --proto
 #--family # -L, --dump only
@@ -229,6 +229,10 @@ fi
 for ((i=2; i < ${#words[@]}-1; i++)); do
 	if [[ ${words[i]} = @(-p|--proto|--protonum) ]]; then
 		str_proto="${words[i+1],,}" # this is the protocol
+	elif [[ ${words[i]} = --dst ]]; then
+		arr_dupe_opts+=( --orig-dst ) # alias to be removed
+	elif [[ ${words[i]} = --src ]]; then
+		arr_dupe_opts+=( --orig-src ) # alias to be removed
 	elif [[ ${words[i]} = --dport ]]; then
 		arr_dupe_opts+=( --orig-port-dst ) # alias to be removed
 	elif [[ ${words[i]} = --sport ]]; then
