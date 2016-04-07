@@ -131,7 +131,7 @@ _conntrack_complete() {
 # at least bash 4 is required
 ((${BASH_VERSINFO[0]} < 4)) && return 0
 local cur prev cword words
-local -i i
+local -i i x
 
 # main command / table / protocol
 local str_act="" str_table="" str_proto=""
@@ -167,16 +167,6 @@ local -a arr_conntrack_opts=(
 local -a arr_expect_opts=( --tuple-src --tuple-dst )
 local -a arr_update_opts=( --label-add --label-del )
 
-# options that require an argument
-local -a arr_opts_w_arg=(
--b --buffer-size
--f --family
--e --event-mask
--o --output
--l --label
-# short forms that need to be covered if user uses them manually on cmd-line
--p -s -d -r -q -m -u
-)
 # protocol depending options
 local -a arr_proto_svc_opts=(
 --sport --orig-port-src --dport --orig-port-dst
@@ -193,6 +183,22 @@ local -a arr_proto_opts=(
 "${arr_proto_icmp_opts[@]}"
 "${arr_proto_gre_opts[@]}"
 "${arr_proto_sctp_opts[@]}"
+)
+
+# options that require an argument
+local -a arr_opts_w_arg=(
+-b --buffer-size
+-f --family
+-e --event-mask
+-o --output
+-l --label
+--mark --secmark
+# short forms that need to be covered if user uses them manually on cmd-line
+-p -s -d -r -q -m -u
+"${arr_common_opts[*]//--*zone/}"
+"${arr_expect_opts[*]}"
+"${arr_update_opts[*]}"
+"${arr_proto_opts[*]}"
 )
 
 COMPREPLY=()
@@ -229,7 +235,7 @@ for ((i=2; i < ${#words[@]}-1; i++)); do
 		arr_dupe_opts+=( --orig-port-src ) # alias to be removed
 	elif [[ ${words[i]} = --orig-port-dst ]]; then
 		arr_dupe_opts+=( --dport ) # alias to be removed
-	elif [[ ${words[i]} = --orig-port-src]]; then
+	elif [[ ${words[i]} = --orig-port-src ]]; then
 		arr_dupe_opts+=( --sport ) # alias to be removed
 	fi
 done
@@ -267,8 +273,8 @@ elif ((cword >= 2)); then
 	fi
 	# option request
 	if [[ $cur = -* ]]; then
-		if [[ $prev = @($(IFS='|';printf "%s|%s|%s|%s|%s|%s\n" "${arr_opts_w_arg[*]}" "${arr_common_opts[*]//--*zone/}" "${arr_conntrack_opts[*]}" "${arr_expect_opts[*]}" "${arr_update_opts[*]}" "${arr_proto_opts[*]}")) ]]
-		then return 0 # options expecting an argument
+		if [[ $prev = @($(IFS='|';printf "%s\n" "${arr_opts_w_arg[*]}")) ]]; then
+			return 0 # options expecting an argument
 		fi
 		COMPREPLY=( $(compgen -W '${arr_common_opts[@]}' -- "$cur") )
 		# table depending options
@@ -363,6 +369,14 @@ if ((${#COMPREPLY[@]})); then
 		for x in ${!COMPREPLY[@]}; do
 			[[ ${COMPREPLY[x]} = -* ]] || continue
 			[[ ${COMPREPLY[x]} = ${arr_dupe_opts[i]} ]] && unset COMPREPLY[x]
+		done
+	done
+	for ((i=2; i < ${#words[@]}-1; i++)); do
+		[[ ${words[i]} = -* ]] || continue
+		for x in ${!COMPREPLY[@]}; do
+			[[ ${COMPREPLY[x]} = -* ]] || continue
+			[[ ${COMPREPLY[x]} = --label ]] && continue # allowed multible times
+			[[ ${COMPREPLY[x]} = ${words[i]} ]] && unset COMPREPLY[x]
 		done
 	done
 fi
