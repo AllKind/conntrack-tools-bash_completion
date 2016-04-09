@@ -123,7 +123,8 @@ if [[ ${words[2]} = @(timeout|helper) ]]; then
 fi
 
 if ((cword == 1)); then # main command
-	COMPREPLY=($(compgen -W 'list add delete get disable default-get default-set' -- "$cur"))
+	COMPREPLY=($(compgen -W \
+		'list add delete get disable default-get default-set' -- "$cur"))
 elif ((cword == 2)); then # subsystem
 	if [[ $str_cmd = @(default-get|default-set)  ]]; then
 		COMPREPLY=($(compgen -W 'timeout help version' -- "$cur"))
@@ -154,7 +155,7 @@ elif ((cword == 5)); then
 	then
 		COMPREPLY=($(compgen -W '${arr_tnames[@]}' -- "$cur"))
 	fi
-elif ((cword >= 5)); then
+elif ((cword > 5)); then
 	if [[ $str_subsys = timeout && $str_cmd = @(add|default-set) && $prev != @($(IFS='|';printf "%s\n" "${arr_tnames[*]}")) ]]
 	then
 		# collect dupes from cmd-line
@@ -164,7 +165,9 @@ elif ((cword >= 5)); then
 			fi
 		done
 		if ((${#arr_dupe_opts[@]})); then # de-dupe options
-			COMPREPLY=($(compgen -W '${arr_tnames[@]/@($(IFS=\|;printf "%s\n" "${arr_dupe_opts[*]}"))/}' -- "$cur"))
+			COMPREPLY=($(compgen -W \
+				'${arr_tnames[@]/@($(IFS=\|;printf "%s\n" "${arr_dupe_opts[*]}"))/}' \
+				-- "$cur"))
 		else
 			COMPREPLY=($(compgen -W '${arr_tnames[@]}' -- "$cur"))
 		fi
