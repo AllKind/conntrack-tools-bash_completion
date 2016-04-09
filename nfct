@@ -89,7 +89,13 @@ shopt -s extglob
 
 _nfct_complete() {
 local cur prev cword words
+local str_cmd str_subsys
 local -i i
+local -a arr_tnames=(
+syn_sent syn_recv established
+fin_wait close_wait last_ack time_wait close
+syn_sent2 retrans unackknowledged
+)
 
 COMPREPLY=()
 
@@ -107,10 +113,50 @@ else # not so neat, but a workaround
     for i in ${!COMP_WORDS[@]}; do words[i]="${COMP_WORDS[i]}"; done
 fi
 
+if [[ ${words[1]} = @(list|add|delete|get|disable|default-get|default-set) ]]; then
+	str_cmd="${words[1]}"
+fi
+if [[ ${words[2]} = @(timeout|helper) ]]; then
+	str_subsys="${words[2]}"
+fi
+
 if ((cword == 1)); then # main command
 	COMPREPLY=($(compgen -W 'list add delete get disable default-get default-set' -- "$cur"))
-elif ((cword == 2)); then
-	COMPREPLY=($(compgen -W 'timeout helper help version' -- "$cur"))
+elif ((cword == 2)); then # subsystem
+	if [[ $str_cmd = @(default-get|default-set)  ]]; then
+		COMPREPLY=($(compgen -W 'timeout help version' -- "$cur"))
+	elif [[ $str_cmd = disable  ]]; then
+		COMPREPLY=($(compgen -W 'helper help version' -- "$cur"))
+	else
+		COMPREPLY=($(compgen -W 'timeout helper help version' -- "$cur"))
+	fi
+elif ((cword == 3)); then
+	if [[ $str_cmd = @(list|add|get|delete|disable) ]]; then
+		# no more options available, or retrieval of object names not yet implemented
+		return 0
+	fi
+	# family
+	if [[ $str_cmd = default-set && $str_subsys = timeout ]]; then
+		COMPREPLY=($(compgen -W 'inet inet6' -- "$cur"))
+	fi
+elif ((cword == 4)); then
+	if [[ $str_cmd = add ]]; then # add for timeout and helper
+		COMPREPLY=($(compgen -W 'inet inet6' -- "$cur"))
+	elif [[ $str_cmd = default-set && $str_subsys = timeout ]]; then
+		COMPREPLY=($(compgen -W 'tcp udp' -- "$cur"))
+	fi
+elif ((cword == 5)); then
+	if [[ $str_cmd = add ]]; then # add for timeout and helper
+		COMPREPLY=($(compgen -W 'tcp udp' -- "$cur"))
+	elif [[ $str_cmd = default-set && $str_subsys = timeout && $prev != @($(IFS='|';printf "%s\n" "${arr_tnames[*]}")) ]]
+	then
+		COMPREPLY=($(compgen -W '${arr_tnames[@]}' -- "$cur"))
+	fi
+elif ((cword >= 5)); then
+	if [[ $str_subsys = timeout && $str_cmd = @(add|default-set) && $prev != @($(IFS='|';printf "%s\n" "${arr_tnames[*]}")) ]]
+	then
+		COMPREPLY=($(compgen -W '${arr_tnames[@]}' -- "$cur"))
+	fi
 fi
 }
 
