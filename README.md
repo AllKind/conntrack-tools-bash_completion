@@ -40,7 +40,7 @@ Numeric protocol names are recognized and their options will be made available.
 Features nfct
 ==========
 
-Support for nfct is very limited. By now only the command and the subsystem names get completed.
+Support for nfct is a bit limited. Retrieval of object names is not yet supported.
 
 
 Installation
