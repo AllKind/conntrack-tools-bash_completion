@@ -136,13 +136,13 @@ elif ((cword == 3)); then
 		return 0
 	fi
 	# family
-	if [[ $str_cmd = default-set && $str_subsys = timeout ]]; then
+	if [[ $str_cmd = @(default-get|default-set) && $str_subsys = timeout ]]; then
 		COMPREPLY=($(compgen -W 'inet inet6' -- "$cur"))
 	fi
 elif ((cword == 4)); then
 	if [[ $str_cmd = add ]]; then # add for timeout and helper
 		COMPREPLY=($(compgen -W 'inet inet6' -- "$cur"))
-	elif [[ $str_cmd = default-set && $str_subsys = timeout ]]; then
+	elif [[ $str_cmd = @(default-get|default-set) && $str_subsys = timeout ]]; then
 		COMPREPLY=($(compgen -W 'tcp udp' -- "$cur"))
 	fi
 elif ((cword == 5)); then
