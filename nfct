@@ -89,8 +89,9 @@ shopt -s extglob
 
 _nfct_complete() {
 local cur prev cword words
-local str_cmd str_subsys
+local str_cmd="" str_subsys=""
 local -i i
+local -a arr_dupe_opts=()
 local -a arr_tnames=(
 syn_sent syn_recv established
 fin_wait close_wait last_ack time_wait close
@@ -156,7 +157,17 @@ elif ((cword == 5)); then
 elif ((cword >= 5)); then
 	if [[ $str_subsys = timeout && $str_cmd = @(add|default-set) && $prev != @($(IFS='|';printf "%s\n" "${arr_tnames[*]}")) ]]
 	then
-		COMPREPLY=($(compgen -W '${arr_tnames[@]}' -- "$cur"))
+		# collect dupes from cmd-line
+		for ((i=5; i < ${#words[@]}-1; i++)); do
+			if [[ ${words[i]} = @($(IFS='|';printf "%s\n" "${arr_tnames[*]}")) ]]; then
+				arr_dupe_opts+=( ${words[i]} )
+			fi
+		done
+		if ((${#arr_dupe_opts[@]})); then # de-dupe options
+			COMPREPLY=($(compgen -W '${arr_tnames[@]/@($(IFS=\|;printf "%s\n" "${arr_dupe_opts[*]}"))/}' -- "$cur"))
+		else
+			COMPREPLY=($(compgen -W '${arr_tnames[@]}' -- "$cur"))
+		fi
 	fi
 fi
 }
