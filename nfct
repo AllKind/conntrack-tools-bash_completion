@@ -113,11 +113,12 @@ else # not so neat, but a workaround
     for i in ${!COMP_WORDS[@]}; do words[i]="${COMP_WORDS[i]}"; done
 fi
 
+# gather information about the command line
 if [[ ${words[1]} = @(list|add|delete|get|disable|default-get|default-set) ]]; then
-	str_cmd="${words[1]}"
+	str_cmd="${words[1]}" # main command
 fi
 if [[ ${words[2]} = @(timeout|helper) ]]; then
-	str_subsys="${words[2]}"
+	str_subsys="${words[2]}" # subsystem
 fi
 
 if ((cword == 1)); then # main command
